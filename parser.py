@@ -1,6 +1,5 @@
 """
-PA 5 dependency: paste in YOUR OWN completed PA 3 parser.py here
-(needed transitively -- symtable.py imports from this file).
+PA 3: The USILang Parser -- starter.
 
 Complete the parsing functions below. AST node types are already
 defined -- do not modify them. See the assignment,
@@ -77,41 +76,74 @@ class _ParserState:
             raise ParseError(f"Line {tok.line}: expected {type_}, found {tok.type} ({tok.lexeme!r}).")
         return self.advance()
 
-
 def parse_factor(state: _ParserState):
     # TODO
-    raise NotImplementedError
+    if state.peek().type == "LPAREN":
+        state.advance()
+        node = parse_expr(state)
+        state.expect("RPAREN")
+        return node
+    elif state.peek().type == "MINUS":
+        node = BinOp(op_tok.lexeme, Number(0,op_tok.line), parse_expr(state), op_tok.line)
+        return node
+    elif state.peek().type == "NUMBER":
+        op_tok = state.advance()
+        return Number(int(op_tok.lexeme), op_tok.line)
+    elif state.peek().type == "IDENT":
+        op_tok = state.advance()
+        return Variable(op_tok.lexeme, op_tok.line)
+    elif state.peek().type == "SEMI":
+        op_tok = state.advance()
+        raise ParseError(f"Missing semicolon on Line {op_tok.line}.")
 
+    raise NotImplementedError
 
 def parse_term(state: _ParserState):
     # TODO
-    raise NotImplementedError
-
+    node = parse_factor(state)
+    while state.peek().type in ("STAR", "SLASH"):
+        op_tok = state.advance()
+        right = parse_factor(state)
+        node = BinOp(op_tok.lexeme, node, right, op_tok.line)
+    return node
 
 def parse_expr(state: _ParserState):
     # TODO
-    raise NotImplementedError
-
+    node = parse_term(state)
+    while state.peek().type in ("PLUS", "MINUS"):
+        op_tok = state.advance()
+        right = parse_term(state)
+        node = BinOp(op_tok.lexeme, node, right, op_tok.line)
+    return node
 
 def parse_declaration(state: _ParserState) -> Declaration:
     # TODO
-    raise NotImplementedError
-
+    op_tok = state.expect("IDENT")
+    state.expect("ASSIGN")
+    return Declaration(op_tok.lexeme, parse_expr(state), op_tok.line)
 
 def parse_assignment(state: _ParserState) -> Assignment:
     # TODO
-    raise NotImplementedError
-
+    op_tok = state.expect("IDENT")
+    state.expect("ASSIGN")
+    return Assignment(op_tok.lexeme, parse_expr(state), op_tok.line)
 
 def parse_statement(state: _ParserState):
     # TODO: peek at state.peek().type to choose declaration vs. assignment
-    raise NotImplementedError
-
+    if state.peek().type == "LET":
+        state.advance()
+        node = parse_declaration(state)
+    else:
+        node = parse_assignment(state)
+    state.expect("SEMI")
+    return node
 
 def parse_program(state: _ParserState) -> Program:
     # TODO: loop parse_statement() until EOF
-    raise NotImplementedError
-
+    program = Program(statements=[])
+    while state.peek().type != "EOF":
+        program.statements.append(parse_statement(state))
+    return program
 
 def parse(tokens: List[Token]) -> Program:
     state = _ParserState(tokens)

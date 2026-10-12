@@ -1,5 +1,5 @@
 """
-PA 5 dependency: paste in YOUR OWN completed PA 4 symtable.py here.
+PA 4: The USILang Symbol Table -- starter.
 
 Complete Environment and check_program below. See
 PA_04_The_USILang_Symbol_Table.md, Part B, for the full requirements.
@@ -25,8 +25,10 @@ class Environment:
         is already defined in THIS scope (not a parent scope --
         shadowing a parent name is allowed).
         """
-        # TODO
-        raise NotImplementedError
+        if self._names.get(name) is None:
+           self._names[name] = line
+        else:
+           raise SemanticError(f"Duplicate declaration '{name}' at line {line}, previously declared at line {self._names[name]}.")
 
     def resolve(self, name: str) -> int:
         """
@@ -34,8 +36,26 @@ class Environment:
         Return the declaration line, or raise SemanticError if not
         found anywhere in the chain.
         """
-        # TODO
-        raise NotImplementedError
+        if self._names.get(name) is None:
+            if self.parent is None:
+                raise SemanticError(f"Variable '{name}' is undefined.")
+            else:
+                return self.parent.resolve(name)
+        else:
+           return self._names[name]
+
+    def check_statement(self, node):
+        if isinstance(node, Declaration):
+            self.check_statement(node.expr)
+            self.define(node.name, node.line)
+        elif isinstance(node, Assignment):
+            self.resolve(node.name)
+            self.check_statement(node.expr)
+        elif isinstance(node, Variable):
+            self.resolve(node.name)
+        elif isinstance(node, BinOp):
+            self.check_statement(node.left)
+            self.check_statement(node.right)
 
 
 def check_program(ast: Program) -> Environment:
@@ -47,5 +67,7 @@ def check_program(ast: Program) -> Environment:
     every Variable in its expr. Errors must surface at the first
     offending statement, not be collected and reported together.
     """
-    # TODO
-    raise NotImplementedError
+    env = Environment()
+    for statement in ast.statements:
+        env.check_statement(statement)
+    return env

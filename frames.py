@@ -1,8 +1,4 @@
 """
-PA 7 dependency: paste in YOUR OWN completed PA 6 frames.py here.
-
-Original header preserved below for reference:
-
 PA 6: The Activation Record -- starter.
 
 Complete ActivationRecord and CallStack below. See
@@ -33,27 +29,39 @@ class ActivationRecord:
         dynamic_link: Optional["ActivationRecord"],
     ) -> None:
         # TODO: store all six arguments as attributes of the same names.
-        raise NotImplementedError
 
+        self.function_name = function_name
+        self.parameters = parameters
+        self.locals_env = locals_env
+        self.return_address = return_address
+        self.static_link = static_link
+        self.dynamic_link = dynamic_link
+
+    def __str__(self):
+        return (f"function name: {self.function_name}, "
+                f"parameters: {self.parameters}, "
+                f"return address: {self.return_address}, "
+                f"static link: {self.static_link}, "
+                f"dynamic link: {self.dynamic_link.function_name if isinstance(self.dynamic_link, ActivationRecord) else 'None'}")
 
 class CallStack:
     def __init__(self) -> None:
         # TODO: internal storage for the stack of frames.
-        raise NotImplementedError
+        self._frames = []
 
     def push(self, record: ActivationRecord) -> None:
         # TODO
-        raise NotImplementedError
+        self._frames.append(record)
 
     def pop(self) -> ActivationRecord:
         """Remove and return the top frame."""
         # TODO
-        raise NotImplementedError
+        return self._frames.pop()
 
     def current(self) -> ActivationRecord:
         """Return (without removing) the top frame."""
         # TODO
-        raise NotImplementedError
+        return self._frames[-1]
 
     def trace(self) -> List[str]:
         """
@@ -62,4 +70,8 @@ class CallStack:
         each line must include the function_name and its parameters.
         """
         # TODO
-        raise NotImplementedError
+        tr = []
+        for frame in self._frames:
+            tr.append(str(frame))
+            # print(frame)
+        return tr
