@@ -82,7 +82,16 @@ def bind_parameters(param_specs: List[Tuple[str, str]], arg_nodes: list, caller_
     an attribute on callee_record such as callee_record.pending_writeback).
     """
     # TODO
-    raise NotImplementedError
+    callee_record.pending_writeback = []
+    for param, arg_node in zip(param_specs, arg_nodes):
+        name, mode = param
+        arg_cell = caller_env._names[arg_node.name]
+        if mode == "value" or mode == "value-result":
+            callee_record.locals_env._names[name] = Cell(arg_cell.value)
+        elif mode == "reference":
+            callee_record.locals_env._names[name] = arg_cell
+        if mode == "value-result":
+            callee_record.pending_writeback.append(name)
 
 
 def commit_value_result(callee_record, caller_env: Environment) -> None:
@@ -93,13 +102,16 @@ def commit_value_result(callee_record, caller_env: Environment) -> None:
     has finished running).
     """
     # TODO
-    raise NotImplementedError
+    for name, writeback in zip(callee_record.pending_writeback, caller_env._names):
+         writeback_cell = caller_env._names[writeback]
+         writeback_cell.value = callee_record.locals_env._names[name].value
 
 
 class Closure:
     def __init__(self, declaration: FunctionDecl, defining_env: Environment) -> None:
         # TODO
-        raise NotImplementedError
+        self.declaration = declaration
+        self.defining_env = defining_env
 
     def call(self, args: list, caller_env: Environment):
         """
@@ -110,4 +122,7 @@ class Closure:
         that new environment and return the result.
         """
         # TODO
-        raise NotImplementedError
+        callee_env = Environment(self.defining_env)
+        for param, arg in zip(self.declaration.params, args):
+            callee_env._names[param.name] = Cell(arg)
+        return evaluate(self.declaration.body, callee_env)
